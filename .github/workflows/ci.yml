@@ -13,19 +13,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Conda
+      - name: Install Conda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-conda: true
-          python-version: "3.10"
           activate-environment: ""
-          use-mamba: true
-
-      - name: Install MLflow and dependencies
-        run: |
-          pip install mlflow scikit-learn pandas seaborn matplotlib
+          python-version: "3.10"
+          auto-update-conda: true
 
       - name: Run MLflow Project (NO conda activate error)
         run: |
           cd MLProject
           mlflow run . -P data_path=dataset_preprocessing.csv --env-manager=local
+
+      - name: Upload MLflow Artifacts (Skilled)
+        uses: actions/upload-artifact@v3
+        with:
+          name: model_artifacts
+          path: MLProject/mlruns
