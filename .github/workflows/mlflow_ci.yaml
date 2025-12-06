@@ -31,12 +31,9 @@ jobs:
       working-directory: MLProject
       run: python modelling.py
 
-    - name: Commit artifacts
+    - name: Skip committing MLflow artifacts (file too large for GitHub)
       run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
-        git add MLProject/mlruns/*
-        git commit -m "Add MLflow artifacts"
-        git push
+        echo "Skipping commit & push of MLflow artifacts because models exceed GitHub file size limit."
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
