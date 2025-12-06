@@ -24,24 +24,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install mlflow scikit-learn pandas
 
-    - name: Run MLflow Project
+    - name: Run training script with MLflow
+      working-directory: MLProject
       run: |
-        mlflow run MLProject --env-manager=local
+        python modelling.py
 
-    - name: Commit and push MLflow artifacts
-      run: |
-        git config user.name 'github-actions'
-        git config user.email 'github-actions@github.com'
-        git add mlruns/*
-        git commit -m 'Update MLflow model artifact'
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Get latest MLflow logged model path
+    - name: Get latest MLflow model artifact path
       id: get_model_path
       run: |
-        MODEL_PATH=$(find mlruns -type d -path "*/artifacts/model" | sort -r | head -n 1)
+        MODEL_PATH=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort -r | head -n 1)
         echo "Latest MLflow model path: $MODEL_PATH"
         echo "MODEL_PATH=$MODEL_PATH" >> $GITHUB_ENV
 
