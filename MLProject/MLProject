@@ -3,5 +3,5 @@ name: workflow_ci_training
 entry_points:
   main:
     parameters:
-      run_name: {type: str, default: "Random Forest with Tuning"}
+      run_name: {type: str, default: "dataset_preprocessing.csv"}
     command: "python modelling.py"
