@@ -20,6 +20,10 @@ jobs:
           activate-environment: ""
           use-mamba: true
 
+      - name: Install MLflow and dependencies
+        run: |
+          pip install mlflow scikit-learn pandas seaborn matplotlib numpy
+
       - name: Run MLflow Project (NO conda activate error)
         run: |
           cd MLProject
