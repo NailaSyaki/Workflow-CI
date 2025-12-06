@@ -1,10 +1,13 @@
 import mlflow
 import mlflow.sklearn
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+import pandas as pd
 
-# Load dataset
+mlflow.set_tracking_uri("file:./mlruns")
+mlflow.set_experiment("gempa-rf-experiment")
+
+# Load dataset (hasil preprocessing)
 df = pd.read_csv("katalog-gempa_preprocessing.csv")
 
 # Tentukan X dan y
@@ -24,4 +27,4 @@ with mlflow.start_run():
     model.fit(X_train, y_train)
 
     mlflow.sklearn.log_model(model, artifact_path="model")
-    print("Training selesai. Model logged di artifacts/model")
+    print("Training selesai. Model tersimpan di mlruns/<exp>/<run>/artifacts/model")
