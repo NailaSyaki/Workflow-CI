@@ -31,9 +31,15 @@ jobs:
       working-directory: MLProject
       run: python modelling.py
 
-    - name: Skip committing MLflow artifacts (file too large for GitHub)
+    - name: Locate MLflow artifacts
+      id: find_artifact
       run: |
-        echo "Skipping commit & push of MLflow artifacts because models exceed GitHub file size limit."
+        ART_PATH=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort -r | head -n 1)
+        echo "ARTIFACT_PATH=$ART_PATH" >> $GITHUB_ENV
+        echo "Found MLflow artifact path: $ART_PATH"
 
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload MLflow model artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: mlflow-model
+        path: ${{ env.ARTIFACT_PATH }}/
