@@ -6,9 +6,8 @@ dependencies:
   - pip
   - pip:
       - mlflow==2.12.1
-      - cloudpickle
-      - numpy
-      - pandas
-      - scikit-learn
+      - scikit-learn==1.3.2
+      - pandas==2.1.4
+      - numpy==1.26.4
       - matplotlib
       - seaborn
