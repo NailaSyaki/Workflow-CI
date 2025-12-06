@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -34,12 +35,14 @@ jobs:
     - name: Locate MLflow artifacts
       id: find_artifact
       run: |
-        ART_PATH=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort -r | head -n 1)
+        ART_PATH=$(find . -type d -path "*mlruns*/artifacts/model" | sort -r | head -n 1)
         echo "ARTIFACT_PATH=$ART_PATH" >> $GITHUB_ENV
-        echo "Found MLflow artifact path: $ART_PATH"
+        echo "Found MLflow artifact folder:"
+        echo "$ART_PATH"
 
     - name: Upload MLflow model artifact
       uses: actions/upload-artifact@v4
       with:
         name: mlflow-model
         path: ${{ env.ARTIFACT_PATH }}/
+        if-no-files-found: error
