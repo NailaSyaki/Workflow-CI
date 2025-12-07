@@ -23,38 +23,30 @@ jobs:
           pip install --upgrade pip
           pip install mlflow scikit-learn pandas numpy
 
-      - name: Ensure dataset exists
-        run: |
-          echo "Checking dataset..."
-          ls -lah MLProject || true
-          ls -lah || true
-          
-          if [ ! -f "MLProject/katalog-gempa_preprocessing.csv" ]; then
-            echo "Dataset tidak ditemukan di MLProject!"
-            exit 1
-          fi
-          
+      # Run training script
       - name: Run MLflow Training Script
         working-directory: MLProject
         run: python modelling.py
 
+      # Debug folder mlruns
       - name: DEBUG mlruns folder
         run: |
-          echo "=== MLProject/mlruns Content ==="
-          ls -R MLProject/mlruns || echo "mlruns NOT FOUND"
+          echo "=== Listing MLProject/mlruns ==="
+          ls -R MLProject/mlruns || echo "mlruns folder NOT FOUND"
 
+      # Find latest model folder
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          echo "Searching MLflow model folder..."
+          echo "Searching for MLflow model folder..."
           model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
 
           if [ -z "$model_path" ]; then
-            echo "No MLflow model folder found!"
+            echo "Model folder not found!"
             exit 1
           fi
 
-          echo "Latest model path: $model_path"
+          echo "✔ Found model at: $model_path"
           echo "model_path=$model_path" >> $GITHUB_OUTPUT
 
       - name: Enable Docker
@@ -70,32 +62,26 @@ jobs:
 
       - name: Build Docker Image from MLflow Model
         run: |
+          echo "Building Docker image for model: ${{ steps.get_model.outputs.model_path }}"
           mlflow models build-docker \
-            -m "${{ steps.get_model.outputs.model_path }}"
+            -m "${{ steps.get_model.outputs.model_path }}" \
+            -n gempa-model
 
-      - name: Zip MLflow Model
+      - name: Tag Docker Image
         run: |
-          echo "Zipping MLflow model..."
-          zip -r mlflow_model.zip "${{ steps.get_model.outputs.model_path }}"
-
-      - name: Upload MLflow Model Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlflow-model
-          path: mlflow_model.zip
-
-      - name: Find MLflow-built Docker Image
-        id: find_image
-        run: |
-          image=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep mlflow-pyfunc | head -n 1)
-          echo "Found image: $image"
-          echo "image=$image" >> $GITHUB_OUTPUT
-
-      - name: Tag Docker Image for Docker Hub
-        run: |
-          docker tag "${{ steps.find_image.outputs.image }}" \
-            ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
+          docker tag gempa-model:latest ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
 
       - name: Push Docker Image to Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
+
+      - name: Upload Model Artifact (ZIP)
+        run: |
+          zip -r gempa_model.zip "${{ steps.get_model.outputs.model_path }}"
+        shell: bash
+
+      - name: Upload MLflow Model ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: gempa-mlflow-model
+          path: gempa_model.zip
