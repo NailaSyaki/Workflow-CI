@@ -38,8 +38,8 @@ jobs:
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          model_path=$(find MLProject/mlruns/0/models -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)
-          echo "model_path=$model_path/artifacts" >> $GITHUB_OUTPUT
+          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
+          echo "model_path=$model_path" >> $GITHUB_OUTPUT
 
       - name: Enable Docker (Docker is preinstalled)
         run: |
