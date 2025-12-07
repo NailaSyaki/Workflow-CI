@@ -32,12 +32,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: model_artifacts
-          path: mlruns
+          path: MLProject/mlruns
 
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          model_path=$(find mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
+          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
           echo "model_path=$model_path" >> $GITHUB_OUTPUT
 
       - name: Debug Model Path
