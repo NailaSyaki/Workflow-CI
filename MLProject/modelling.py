@@ -6,16 +6,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
+# Setup Argument Parser
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_path", type=str, required=True)
 parser.add_argument("--run_name", type=str, default="Model Random Forest")
 args = parser.parse_args()
 
 print("Dataset:", args.data_path)
-print("Run Name:", args.run_name)
 
+# Load Data
 df = pd.read_csv(args.data_path)
-
 X = df.drop(columns=["mag"])
 y = df["mag"]
 
@@ -23,20 +23,20 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-with mlflow.start_run(run_name=args.run_name):
-    
-    # 1. Enable autologging
-    mlflow.sklearn.autolog()
+mlflow.set_tag("mlflow.runName", args.run_name)
 
-    # 2. Train Model
-    model = RandomForestRegressor()
-    model.fit(X_train, y_train)
+# 1. Enable autologging
+mlflow.sklearn.autolog()
 
-    # 3. Predict & Evaluasi
-    preds = model.predict(X_test)
-    mae = mean_absolute_error(y_test, preds)
-    mlflow.log_metric("mae_manual", mae)
-    print("MAE:", mae)
+# 2. Train Model
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
 
-    print("Saving model artifact...")
-    mlflow.sklearn.log_model(model, "model")
+# 3. Predict & Evaluasi
+preds = model.predict(X_test)
+mae = mean_absolute_error(y_test, preds)
+mlflow.log_metric("mae_manual", mae)
+print("MAE:", mae)
+
+print("Saving model artifact to 'model' directory...")
+mlflow.sklearn.log_model(model, "model")
