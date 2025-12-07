@@ -48,27 +48,27 @@ jobs:
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          # FIX: Mencari file 'MLmodel' di SELURUH direktori (.) bukan hanya di MLProject
-          # Kita gunakan 'head -n 1' untuk mengambil yang pertama ditemukan
+          # Cari folder 'mlruns' dulu untuk memastikan path dasar
+          # Kita mencari file MLmodel yang berada di dalam folder bernama 'model'
+          # Struktur biasanya: .../artifacts/model/MLmodel
           
-          echo "Searching for MLmodel file..."
-          MODEL_CONF=$(find . -name "MLmodel" | head -n 1)
+          echo "Searching for MLmodel..."
           
+          # Cari file MLmodel, urutkan berdasarkan waktu modifikasi (terbaru), ambil 1
+          MODEL_CONF=$(find $(pwd) -name "MLmodel" -print0 | xargs -0 ls -1t | head -n 1)
+
           if [ -z "$MODEL_CONF" ]; then
-            echo "::error::File 'MLmodel' tidak ditemukan dimanapun! Cek log langkah 'Run MLflow Project'."
+            echo "::error::File 'MLmodel' tidak ditemukan! Pastikan modelling.py memiliki 'mlflow.sklearn.log_model'."
+            # Debugging ekstra: Tampilkan semua file jika gagal
+            find . -maxdepth 5
             exit 1
           fi
           
-          # Dapatkan folder directory dari file MLmodel tersebut
-          # Contoh: ./mlruns/0/xyz/artifacts/model/MLmodel -> ./mlruns/0/xyz/artifacts/model
-          REL_MODEL_DIR=$(dirname "$MODEL_CONF")
+          # Ambil folder induk dari MLmodel (ini adalah folder yang berisi conda.yaml, python_env.yaml, dll)
+          MODEL_DIR=$(dirname "$MODEL_CONF")
           
-          # Ubah ke Absolute Path agar Docker tidak bingung
-          ABS_MODEL_DIR=$(readlink -f "$REL_MODEL_DIR")
-          
-          echo "Model found at: $ABS_MODEL_DIR"
-          echo "model_path=$ABS_MODEL_DIR" >> $GITHUB_OUTPUT
-
+          echo "Model found at: $MODEL_DIR"
+          echo "model_path=$MODEL_DIR" >> $GITHUB_OUTPUT
       - name: Enable Docker
         run: |
           sudo systemctl start docker
