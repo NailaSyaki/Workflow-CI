@@ -1,1 +1,1 @@
-https://hub.docker.com/r/nailasyaki/sml-naila
+https://hub.docker.com/r/nailasyaki/gempa-model
