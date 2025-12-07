@@ -19,7 +19,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 mlflow.autolog()
 
-with mlflow.start_run():              
+with mlflow.start_run():
     model = RandomForestRegressor()
     model.fit(X_train, y_train)
 
@@ -27,5 +27,4 @@ with mlflow.start_run():
     mae = mean_absolute_error(y_test, preds)
 
     mlflow.sklearn.log_model(model, "model")
-
     print("MAE:", mae)
