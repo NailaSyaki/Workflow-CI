@@ -1,7 +1,10 @@
-name: workflow_ci_training
+MLProject :
+name: Workflow_CI_training
+
+conda_env: conda.yaml
 
 entry_points:
   main:
     parameters:
-      run_name: {type: str, default: "dataset_preprocessing.csv"}
+      run_name: {type: str, default: "Model Logistic Regression"}
     command: "python modelling.py"
