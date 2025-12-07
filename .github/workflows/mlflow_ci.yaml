@@ -27,6 +27,13 @@ jobs:
         working-directory: MLProject
         run: python modelling.py
 
+      - name: Debug folder structure
+        run: |
+          echo "=== ROOT DIR ==="
+          ls -R .
+          echo "=== MLProject DIR ==="
+          ls -R MLProject
+
       - name: DEBUG mlruns folder
         run: |
           echo "=== MLProject/mlruns Content ==="
