@@ -56,7 +56,7 @@ jobs:
         run: |
           mlflow models build-docker \
             -m ${{ steps.get_model.outputs.model_path }} \
-            -t gempa-model:latest
+            --image-name gempa-model:latest
 
       - name: Tag Docker Image
         run: |
