@@ -26,6 +26,7 @@ jobs:
 
       - name: Run MLflow Project (training)
         run: |
+          # Menjalankan training. Pastikan folder MLProject ada di root repository
           mlflow run MLProject -P data_path=katalog-gempa_preprocessing.csv --env-manager=local
 
       - name: Upload MLflow Artifacts
@@ -37,15 +38,28 @@ jobs:
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
-          echo "model_path=$model_path" >> $GITHUB_OUTPUT
+          # FIX: Mencari file 'MLmodel' untuk memastikan kita mendapatkan folder yang benar
+          # Menggunakan $(pwd) untuk absolute path agar Docker tidak bingung
+          MODEL_CONF=$(find $(pwd)/MLProject/mlruns -name "MLmodel" | head -n 1)
+          
+          if [ -z "$MODEL_CONF" ]; then
+            echo "::error::Model MLflow tidak ditemukan! Pastikan training berhasil menyimpan model."
+            exit 1
+          fi
+          
+          # Ambil nama folder (dirname) dari file MLmodel tersebut
+          MODEL_DIR=$(dirname "$MODEL_CONF")
+          
+          echo "Found model at: $MODEL_DIR"
+          echo "model_path=$MODEL_DIR" >> $GITHUB_OUTPUT
 
       - name: Debug Model Path
         run: echo "MODEL PATH = ${{ steps.get_model.outputs.model_path }}"
 
       - name: Enable Docker
         run: |
-          sudo systemctl start docker
+          # Di GitHub Actions ubuntu-latest, docker biasanya sudah aktif, 
+          # tapi kita cek versinya.
           docker --version
 
       - name: Login to Docker Hub
@@ -56,15 +70,18 @@ jobs:
 
       - name: Build Docker Image Using MLflow
         run: |
+          # FIX: Menambahkan quotes pada path dan memberikan nama image (-n) eksplisit
           mlflow models build-docker \
-            -m ${{ steps.get_model.outputs.model_path }}
+            -m "${{ steps.get_model.outputs.model_path }}" \
+            -n gempa-model
 
       - name: List Docker Images
         run: docker images
 
       - name: Tag Docker Image Correctly
         run: |
-          docker tag model ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
+          # Tag image yang baru dibuat (gempa-model) ke format Docker Hub
+          docker tag gempa-model ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
 
       - name: Push Docker Image to Docker Hub
         run: |
