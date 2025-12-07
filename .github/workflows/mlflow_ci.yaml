@@ -1,4 +1,4 @@
-name: MLflow CI Training (Advance Level)
+name: MLflow CI Training Advanced
 
 on:
   push:
@@ -22,29 +22,17 @@ jobs:
 
       - name: Install MLflow and dependencies
         run: |
-          pip install --upgrade pip
-          pip install mlflow scikit-learn pandas numpy
+          pip install mlflow scikit-learn pandas seaborn matplotlib numpy
 
-      - name: Run MLflow Training Script
-        working-directory: MLProject
-        run: python modelling.py
-
-      - name: Debug folder structure
+      - name: Run MLflow Project (use your dataset)
         run: |
-          echo "=== ROOT DIR ==="
-          ls -R .
-          echo "=== MLProject DIR ==="
-          ls -R MLProject
-
-      - name: DEBUG mlruns folder
-        run: |
-          echo "=== MLProject/mlruns Content ==="
-          ls -R MLProject/mlruns || echo "mlruns folder NOT FOUND — training may have failed"
+          cd MLProject
+          mlflow run . -P data_path=katalog-gempa_raw.csv --env-manager=local
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mlflow-artifacts
+          name: model_artifacts
           path: MLProject/mlruns
 
       - name: Get Latest MLflow Model Path
@@ -53,9 +41,9 @@ jobs:
           model_path=$(find MLProject/mlruns/0/models -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)
           echo "model_path=$model_path/artifacts" >> $GITHUB_OUTPUT
 
-      - name: Enable Docker
+      - name: Enable Docker (Docker is preinstalled)
         run: |
-          sudo systemctl start docker || true
+          sudo systemctl start docker
           docker --version
 
       - name: Login to Docker Hub
