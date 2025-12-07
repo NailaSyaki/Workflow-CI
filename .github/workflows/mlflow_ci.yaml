@@ -1,4 +1,4 @@
-name: MLflow CI Training Advanced
+name: MLflow CI Training (Skilled Level)
 
 on:
   push:
@@ -23,65 +23,18 @@ jobs:
           pip install --upgrade pip
           pip install mlflow scikit-learn pandas numpy
 
-      # Run training script
       - name: Run MLflow Training Script
         working-directory: MLProject
         run: python modelling.py
 
-      # Debug folder mlruns
       - name: DEBUG mlruns folder
         run: |
-          echo "=== Listing MLProject/mlruns ==="
-          ls -R MLProject/mlruns || echo "mlruns folder NOT FOUND"
+          echo "=== MLProject/mlruns Content ==="
+          ls -R MLProject/mlruns || echo "mlruns folder NOT FOUND — training may have failed"
 
-      # Find latest model folder
-      - name: Get Latest MLflow Model Path
-        id: get_model
-        run: |
-          echo "Searching for MLflow model folder..."
-          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
-
-          if [ -z "$model_path" ]; then
-            echo "Model folder not found!"
-            exit 1
-          fi
-
-          echo "✔ Found model at: $model_path"
-          echo "model_path=$model_path" >> $GITHUB_OUTPUT
-
-      - name: Enable Docker
-        run: |
-          sudo systemctl start docker || true
-          docker --version
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker Image from MLflow Model
-        run: |
-          echo "Building Docker image for model: ${{ steps.get_model.outputs.model_path }}"
-          mlflow models build-docker \
-            -m "${{ steps.get_model.outputs.model_path }}" \
-            -n gempa-model
-
-      - name: Tag Docker Image
-        run: |
-          docker tag gempa-model:latest ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
-
-      - name: Push Docker Image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
-
-      - name: Upload Model Artifact (ZIP)
-        run: |
-          zip -r gempa_model.zip "${{ steps.get_model.outputs.model_path }}"
-        shell: bash
-
-      - name: Upload MLflow Model ZIP
+      - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gempa-mlflow-model
-          path: gempa_model.zip
+          name: mlflow-artifacts
+          path: MLProject/mlruns
+          if-no-files-found: warn
