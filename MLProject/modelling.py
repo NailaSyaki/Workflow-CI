@@ -8,7 +8,7 @@ from sklearn.metrics import mean_absolute_error
 mlflow.set_tracking_uri("file:./mlruns")
 mlflow.set_experiment("gempa-experiment")
 
-df = pd.read_csv("katalog-gempa_preprocessing.csv")
+df = pd.read_csv("MLProject/katalog-gempa_preprocessing.csv")
 
 X = df.drop(columns=["mag"])
 y = df["mag"]
