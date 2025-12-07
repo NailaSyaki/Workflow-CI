@@ -36,8 +36,6 @@ jobs:
         id: get_model
         run: |
           echo "Searching MLflow model folder..."
-          find MLProject/mlruns -type d -path "*/artifacts/model"
-
           model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
 
           if [ -z "$model_path" ]; then
@@ -61,18 +59,12 @@ jobs:
 
       - name: Build Docker Image from MLflow Model
         run: |
-          echo "Using model: ${{ steps.get_model.outputs.model_path }}"
           mlflow models build-docker \
             -m "${{ steps.get_model.outputs.model_path }}"
 
       - name: Zip MLflow Model
         run: |
-          if [ -z "${{ steps.get_model.outputs.model_path }}" ]; then
-            echo "Model path is empty. Cannot zip."
-            exit 1
-          fi
-
-          echo "Zipping: ${{ steps.get_model.outputs.model_path }}"
+          echo "Zipping MLflow model..."
           zip -r mlflow_model.zip "${{ steps.get_model.outputs.model_path }}"
 
       - name: Upload MLflow Model Artifact
@@ -92,6 +84,7 @@ jobs:
         run: |
           docker tag "${{ steps.find_image.outputs.image }}" \
             ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
+
       - name: Push Docker Image to Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
