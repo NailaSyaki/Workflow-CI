@@ -25,15 +25,19 @@ jobs:
 
       - name: Run MLflow Training Script
         working-directory: MLProject
-        run: |
-          python modelling.py
+        run: python modelling.py
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts
-          path: MLProject/mlruns/**/artifacts/**
+          path: MLProject/mlruns
           if-no-files-found: error
+
+      - name: DEBUG MLflow Folder
+        run: |
+          echo "===== MLProject/mlruns ====="
+          ls -R MLProject/mlruns
 
       - name: Get Latest MLflow Model Path
         id: get_model
