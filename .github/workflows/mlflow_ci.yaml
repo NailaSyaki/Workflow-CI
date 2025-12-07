@@ -26,52 +26,40 @@ jobs:
 
       - name: Run MLflow Project (training)
         run: |
+          # Perintah ini akan otomatis membuat Run ID
           mlflow run MLProject -P data_path=katalog-gempa_preprocessing.csv --env-manager=local
-
-      # --- BAGIAN PERBAIKAN DIMULAI DARI SINI ---
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: model_artifacts
-          # Upload seluruh folder kerja untuk memastikan kita menangkap mlruns dimanapun dia berada
           path: |
             **/mlruns
             !**/mlruns/**/tags
 
-      - name: Debug File Structure (Wajib untuk Troubleshooting)
-        run: |
-          echo "=== LISTING ALL FILES (Mencari letak mlruns) ==="
-          find . -maxdepth 4 -not -path '*/.*'
-          echo "================================================"
-
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          # Cari folder 'mlruns' dulu untuk memastikan path dasar
-          # Kita mencari file MLmodel yang berada di dalam folder bernama 'model'
-          # Struktur biasanya: .../artifacts/model/MLmodel
-          
-          echo "Searching for MLmodel..."
-          
-          # Cari file MLmodel, urutkan berdasarkan waktu modifikasi (terbaru), ambil 1
+          # Cari file 'MLmodel' di seluruh direktori kerja saat ini
+          # Urutkan berdasarkan waktu (terbaru di atas) dan ambil 1
+          echo "Mencari lokasi model..."
           MODEL_CONF=$(find $(pwd) -name "MLmodel" -print0 | xargs -0 ls -1t | head -n 1)
 
           if [ -z "$MODEL_CONF" ]; then
-            echo "::error::File 'MLmodel' tidak ditemukan! Pastikan modelling.py memiliki 'mlflow.sklearn.log_model'."
-            # Debugging ekstra: Tampilkan semua file jika gagal
-            find . -maxdepth 5
+            echo "::error::Model tidak ditemukan! Pastikan modelling.py berjalan sukses."
+            # Debugging: List file tree jika gagal
+            find . -maxdepth 4
             exit 1
           fi
-          
-          # Ambil folder induk dari MLmodel (ini adalah folder yang berisi conda.yaml, python_env.yaml, dll)
+
+          # Ambil folder parent dari file MLmodel (folder ini yang berisi conda.yaml & model.pkl)
           MODEL_DIR=$(dirname "$MODEL_CONF")
           
-          echo "Model found at: $MODEL_DIR"
+          echo "Model ditemukan di: $MODEL_DIR"
           echo "model_path=$MODEL_DIR" >> $GITHUB_OUTPUT
+
       - name: Enable Docker
         run: |
-          sudo systemctl start docker
           docker --version
 
       - name: Login to Docker Hub
@@ -82,9 +70,7 @@ jobs:
 
       - name: Build Docker Image Using MLflow
         run: |
-          echo "Building Docker from path: ${{ steps.get_model.outputs.model_path }}"
-          
-          # Gunakan path dari step sebelumnya
+          # Menggunakan path dari step sebelumnya
           mlflow models build-docker \
             -m "${{ steps.get_model.outputs.model_path }}" \
             -n gempa-model
