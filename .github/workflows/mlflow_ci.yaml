@@ -52,9 +52,20 @@ jobs:
 
       - name: Build Docker Image from MLflow Model
         run: |
-          echo "Building Docker image using: ${{ steps.get_model.outputs.model_path }}"
+          echo "Using model: ${{ steps.get_model.outputs.model_path }}"
           mlflow models build-docker \
             -m "${{ steps.get_model.outputs.model_path }}"
+
+      - name: Zip MLflow Model
+        run: |
+          echo "Zipping model: ${{ steps.get_model.outputs.model_path }}"
+          zip -r mlflow_model.zip "${{ steps.get_model.outputs.model_path }}"
+
+      - name: Upload MLflow Model Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-model
+          path: mlflow_model.zip
 
       - name: Find MLflow-built Docker Image
         id: find_image
