@@ -7,4 +7,7 @@ entry_points:
     parameters:
       data_path: {type: str, default: "katalog-gempa_preprocessing.csv"}
       run_name: {type: str, default: "Model Random Forest"}
-    command: "python modelling.py --data_path {data_path} --run_name '{run_name}'"
+    command: >
+      python modelling.py
+      --data_path {data_path}
+      --run_name "{run_name}"
