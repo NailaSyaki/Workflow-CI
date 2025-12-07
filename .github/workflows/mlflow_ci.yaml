@@ -37,18 +37,18 @@ jobs:
       - name: DEBUG MLflow Folder
         run: |
           echo "===== MLProject/mlruns ====="
-          ls -R MLProject/mlruns
+          ls -R MLProject/mlruns || echo "No mlruns folder found"
 
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
           model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
-          echo "model_path=$model_path" >> $GITHUB_OUTPUT
           echo "Latest model path: $model_path"
+          echo "model_path=$model_path" >> $GITHUB_OUTPUT
 
       - name: Enable Docker
         run: |
-          sudo systemctl start docker
+          sudo systemctl start docker || true
           docker --version
 
       - name: Login to Docker Hub
@@ -59,9 +59,10 @@ jobs:
 
       - name: Build Docker Image from MLflow Model
         run: |
+          echo "Building Docker image using model at: ${{ steps.get_model.outputs.model_path }}"
           mlflow models build-docker \
-          -m "${{ steps.get_model.outputs.model_path }}" \
-          -t gempa-model
+            -m "${{ steps.get_model.outputs.model_path }}" \
+            -t gempa-model
 
       - name: Tag Docker Image
         run: |
