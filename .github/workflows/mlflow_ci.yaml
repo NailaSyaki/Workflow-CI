@@ -23,6 +23,17 @@ jobs:
           pip install --upgrade pip
           pip install mlflow scikit-learn pandas numpy
 
+      - name: Ensure dataset exists
+        run: |
+          echo "Checking dataset..."
+          ls -lah MLProject || true
+          ls -lah || true
+          
+          if [ ! -f "MLProject/katalog-gempa_preprocessing.csv" ]; then
+            echo "Dataset tidak ditemukan di MLProject!"
+            exit 1
+          fi
+          
       - name: Run MLflow Training Script
         working-directory: MLProject
         run: python modelling.py
