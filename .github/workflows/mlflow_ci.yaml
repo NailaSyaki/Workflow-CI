@@ -42,17 +42,8 @@ jobs:
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          echo "Searching MLflow model folder..."
-          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
-
-          if [ -z "$model_path" ]; then
-            echo "Model folder not found!"
-            exit 1
-          fi
-
-          echo "✔ Found model at: $model_path"
-          echo "model_path=$model_path" >> $GITHUB_OUTPUT
-
+          model_path=$(find MLProject/mlruns/0/models -mindepth 1 -maxdepth 1 -type d | sort | tail -n 1)
+          echo "model_path=$model_path/artifacts" >> $GITHUB_OUTPUT
 
       - name: Enable Docker
         run: |
