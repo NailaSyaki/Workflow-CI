@@ -13,10 +13,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: "3.10"
+          auto-update-conda: true
+          activate-environment: ""
+          use-mamba: true
 
       - name: Install MLflow and dependencies
         run: |
@@ -44,7 +46,6 @@ jobs:
         with:
           name: mlflow-artifacts
           path: MLProject/mlruns
-          if-no-files-found: warn
 
       - name: Get Latest MLflow Model Path
         id: get_model
