@@ -26,40 +26,52 @@ jobs:
 
       - name: Run MLflow Project (training)
         run: |
-          # Menjalankan training. Pastikan folder MLProject ada di root repository
           mlflow run MLProject -P data_path=katalog-gempa_preprocessing.csv --env-manager=local
+
+      # --- BAGIAN PERBAIKAN DIMULAI DARI SINI ---
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: model_artifacts
-          path: MLProject/mlruns
+          # Upload seluruh folder kerja untuk memastikan kita menangkap mlruns dimanapun dia berada
+          path: |
+            **/mlruns
+            !**/mlruns/**/tags
+
+      - name: Debug File Structure (Wajib untuk Troubleshooting)
+        run: |
+          echo "=== LISTING ALL FILES (Mencari letak mlruns) ==="
+          find . -maxdepth 4 -not -path '*/.*'
+          echo "================================================"
 
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          # FIX: Mencari file 'MLmodel' untuk memastikan kita mendapatkan folder yang benar
-          # Menggunakan $(pwd) untuk absolute path agar Docker tidak bingung
-          MODEL_CONF=$(find $(pwd)/MLProject/mlruns -name "MLmodel" | head -n 1)
+          # FIX: Mencari file 'MLmodel' di SELURUH direktori (.) bukan hanya di MLProject
+          # Kita gunakan 'head -n 1' untuk mengambil yang pertama ditemukan
+          
+          echo "Searching for MLmodel file..."
+          MODEL_CONF=$(find . -name "MLmodel" | head -n 1)
           
           if [ -z "$MODEL_CONF" ]; then
-            echo "::error::Model MLflow tidak ditemukan! Pastikan training berhasil menyimpan model."
+            echo "::error::File 'MLmodel' tidak ditemukan dimanapun! Cek log langkah 'Run MLflow Project'."
             exit 1
           fi
           
-          # Ambil nama folder (dirname) dari file MLmodel tersebut
-          MODEL_DIR=$(dirname "$MODEL_CONF")
+          # Dapatkan folder directory dari file MLmodel tersebut
+          # Contoh: ./mlruns/0/xyz/artifacts/model/MLmodel -> ./mlruns/0/xyz/artifacts/model
+          REL_MODEL_DIR=$(dirname "$MODEL_CONF")
           
-          echo "Found model at: $MODEL_DIR"
-          echo "model_path=$MODEL_DIR" >> $GITHUB_OUTPUT
-
-      - name: Debug Model Path
-        run: echo "MODEL PATH = ${{ steps.get_model.outputs.model_path }}"
+          # Ubah ke Absolute Path agar Docker tidak bingung
+          ABS_MODEL_DIR=$(readlink -f "$REL_MODEL_DIR")
+          
+          echo "Model found at: $ABS_MODEL_DIR"
+          echo "model_path=$ABS_MODEL_DIR" >> $GITHUB_OUTPUT
 
       - name: Enable Docker
         run: |
-          # Di GitHub Actions ubuntu-latest, docker biasanya sudah aktif, 
-          # tapi kita cek versinya.
+          sudo systemctl start docker
           docker --version
 
       - name: Login to Docker Hub
@@ -70,7 +82,9 @@ jobs:
 
       - name: Build Docker Image Using MLflow
         run: |
-          # FIX: Menambahkan quotes pada path dan memberikan nama image (-n) eksplisit
+          echo "Building Docker from path: ${{ steps.get_model.outputs.model_path }}"
+          
+          # Gunakan path dari step sebelumnya
           mlflow models build-docker \
             -m "${{ steps.get_model.outputs.model_path }}" \
             -n gempa-model
@@ -80,7 +94,6 @@ jobs:
 
       - name: Tag Docker Image Correctly
         run: |
-          # Tag image yang baru dibuat (gempa-model) ke format Docker Hub
           docker tag gempa-model ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
 
       - name: Push Docker Image to Docker Hub
