@@ -60,8 +60,8 @@ jobs:
       - name: Build Docker Image from MLflow Model
         run: |
           mlflow models build-docker \
-            -m ${{ steps.get_model.outputs.model_path }} \
-            -n gempa-model
+          -m "${{ steps.get_model.outputs.model_path }}" \
+          -t gempa-model
 
       - name: Tag Docker Image
         run: |
