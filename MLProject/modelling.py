@@ -2,33 +2,32 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 
+# Set tracking directory
 mlflow.set_tracking_uri("file:./mlruns")
-mlflow.set_experiment("heart-experiment")
+mlflow.set_experiment("gempa-experiment")
 
-# Load dataset
-df = pd.read_csv("heartdataset_preprocessing.csv")
+df = pd.read_csv("katalog-gempa_preprocessing.csv")
 
-X = df.drop("target", axis=1)
-y = df["target"]
+# Pisahkan fitur & target
+X = df.drop(columns=["mag"])  
+y = df["mag"]
 
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
 with mlflow.start_run():
-    model = LogisticRegression(max_iter=1000)
+    model = RandomForestRegressor()
     model.fit(X_train, y_train)
 
     preds = model.predict(X_test)
-    acc = accuracy_score(y_test, preds)
+    mse = mean_squared_error(y_test, preds)
 
-    print("Accuracy:", acc)
+    print("MSE:", mse)
 
-    # Log metric
-    mlflow.log_metric("accuracy", acc)
-
-    # Simpan model ke artifacts/model
+    mlflow.log_metric("mse", mse)
     mlflow.sklearn.log_model(model, "model")
