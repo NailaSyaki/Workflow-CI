@@ -24,24 +24,26 @@ jobs:
         run: |
           pip install mlflow scikit-learn pandas seaborn matplotlib numpy
 
-      - name: Run MLflow Project (use your dataset)
+      - name: Run MLflow Project (training)
         run: |
-          cd MLProject
-          mlflow run . -P data_path=katalog-gempa_preprocessing.csv --env-manager=local
+          mlflow run MLProject -P data_path=katalog-gempa_preprocessing.csv --env-manager=local
 
       - name: Upload MLflow Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: model_artifacts
-          path: MLProject/mlruns
+          path: mlruns
 
       - name: Get Latest MLflow Model Path
         id: get_model
         run: |
-          model_path=$(find MLProject/mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
+          model_path=$(find mlruns -type d -path "*/artifacts/model" | sort | tail -n 1)
           echo "model_path=$model_path" >> $GITHUB_OUTPUT
 
-      - name: Enable Docker (Docker is preinstalled)
+      - name: Debug Model Path
+        run: echo "MODEL PATH = ${{ steps.get_model.outputs.model_path }}"
+
+      - name: Enable Docker
         run: |
           sudo systemctl start docker
           docker --version
@@ -55,14 +57,14 @@ jobs:
       - name: Build Docker Image Using MLflow
         run: |
           mlflow models build-docker \
-            -m ${{ steps.get_model.outputs.model_path }} 
-            
-      - name: List Docker Images (debug)
+            -m ${{ steps.get_model.outputs.model_path }}
+
+      - name: List Docker Images
         run: docker images
 
-      - name: Tag Docker Image
+      - name: Tag Docker Image Correctly
         run: |
-          docker tag gempa-model:latest ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
+          docker tag model ${{ secrets.DOCKER_USERNAME }}/gempa-model:latest
 
       - name: Push Docker Image to Docker Hub
         run: |
