@@ -19,12 +19,14 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 mlflow.autolog()
 
-with mlflow.start_run():
-    model = RandomForestRegressor()
-    model.fit(X_train, y_train)
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
 
-    preds = model.predict(X_test)
-    mae = mean_absolute_error(y_test, preds)
+preds = model.predict(X_test)
+mae = mean_absolute_error(y_test, preds)
 
-    mlflow.sklearn.log_model(model, "model")
-    print("MAE:", mae)
+mlflow.log_metric("mae", mae)
+
+mlflow.sklearn.log_model(model, "model")
+
+print("MAE:", mae)
