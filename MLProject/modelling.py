@@ -1,3 +1,4 @@
+import argparse
 import mlflow
 import mlflow.sklearn
 import pandas as pd
@@ -5,10 +6,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
-mlflow.set_tracking_uri("file:./mlruns")
-mlflow.set_experiment("gempa-experiment")
+parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", type=str, default="katalog-gempa_preprocessing.csv")
+args = parser.parse_args()
 
-df = pd.read_csv("katalog-gempa_preprocessing.csv")
+df = pd.read_csv(args.data_path)
 
 X = df.drop(columns=["mag"])
 y = df["mag"]
@@ -17,16 +19,12 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-mlflow.autolog()
-
+mlflow.sklearn.autolog()
 model = RandomForestRegressor()
 model.fit(X_train, y_train)
-
 preds = model.predict(X_test)
 mae = mean_absolute_error(y_test, preds)
-
-mlflow.log_metric("mae", mae)
-
-mlflow.sklearn.log_model(model, "model")
+mlflow.log_metric("mae_manual", mae)
+mlflow.sklearn.log_model(model, artifact_path="model")
 
 print("MAE:", mae)
